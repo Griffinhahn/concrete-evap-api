@@ -1,9 +1,18 @@
-
 from fastapi import FastAPI
 from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
 import math
 
 app = FastAPI()
+
+# ✅ CORS middleware setup — only once!
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # For production: replace with your domain
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Linear regression model coefficients from training
 COEFFICIENTS = {
@@ -15,9 +24,8 @@ COEFFICIENTS = {
     '3High': -0.04796402318852745,
     '3Low': 0.1467509219942576
 }
-INTERCEPT = 0  # You can update this if available
+INTERCEPT = 41.78
 
-# Input schema
 class EvaporationInput(BaseModel):
     ambient_temp: float
     phigh: float
@@ -26,10 +34,9 @@ class EvaporationInput(BaseModel):
     low2: float
     high3: float
     low3: float
-    rh: float  # relative humidity
-    wind: float  # wind speed
+    rh: float
+    wind: float
 
-# Risk classification with beach flag colors
 def classify_evaporation_risk(rate):
     if rate <= 0.1:
         return {"level": "Safe", "flag": "Green"}
@@ -40,7 +47,6 @@ def classify_evaporation_risk(rate):
     else:
         return {"level": "Concrete Death", "flag": "Black"}
 
-# Concrete temperature prediction
 def predict_concrete_temp(data: EvaporationInput):
     return sum([
         COEFFICIENTS['Ambient Temp'] * data.ambient_temp,
@@ -52,7 +58,6 @@ def predict_concrete_temp(data: EvaporationInput):
         COEFFICIENTS['3Low'] * data.low3,
     ]) + INTERCEPT
 
-# Evaporation rate formula
 def calculate_evaporation_rate(tc, ta, rh, wind):
     evap = ((tc ** 2.5) - ((rh / 100) * (ta ** 2.5))) * (1 + (0.4 * wind)) * 0.000001
     return round(evap, 6)
